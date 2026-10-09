@@ -211,6 +211,21 @@ What Sam thinks happens next:
 
 Plain text, readable in a text message or email. The note stays short; the page to read together opens from a link as a web page the parent can read on the tablet or print.
 
+### S11. Excerpt page (parent, opened from the note)
+
+```
++--------------------------------------------------+
+|  Read this together tonight                      |
+|                                                  |
+|    Sam ran to the pond.                          |
+|    Fig sat on a log. Fig sat and sat.            |
+|                                                  |
+|        [ We read it together ]                   |
++--------------------------------------------------+
+```
+
+Opened by the note's excerpt link, which has its own token. Opening it sets `opened_at`; tapping the button sets `page_read_at`. Printable.
+
 ## Error and edge states
 
 | # | Situation | Behavior |
@@ -233,6 +248,6 @@ Plain text, readable in a text message or email. The note stays short; the page 
 
 ## Follow-ups for later documents
 
-- **Data model:** the note links to a page excerpt, so a story-page or excerpt entity needs an ID the note can point to.
+- **Data model:** done. Excerpt entity and `opened_at` / `page_read_at` are in [04-data-model.md](04-data-model.md); screen S11 above covers the excerpt page.
 - **Technical design:** the excerpt link needs the same private-token protection as the child's link.
 - **Content:** a fear detail appears in the story, so chapter slots and the human review need to keep the fear from being frightening.
