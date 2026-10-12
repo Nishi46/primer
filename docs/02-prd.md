@@ -9,7 +9,7 @@ Every story is tagged **MVP** (in the first version) or **Manual** (done by a pe
 | Role | Who | Where they act |
 | --- | --- | --- |
 | Child | Age 5 to 7, reads aloud | Tablet browser, private link |
-| Parent | Signs up, receives the note, coaches | Signup page, text or email |
+| Parent | Signs up, receives the note, coaches | Signup page, email |
 | Operator | Nishi | Behind the scenes: reviews recordings, sends notes, runs reading checks |
 
 ## Child stories
@@ -43,7 +43,8 @@ Every story is tagged **MVP** (in the first version) or **Manual** (done by a pe
 
 **P1. Sign up.** As a parent, I enter my child's first name and two life details (such as a pet's name or a fear) and where to send the weekly note. *(MVP)*
 - No account, password or payment.
-- The parent chooses text or email for the link and the weekly note, and consents to that channel at signup.
+- The link and the weekly note are sent by email (revised 2026-10-12; SMS deferred). The parent gives an email address at signup.
+- Signup includes a signed parental-consent step that names the vendors handling the child's data (see [05-technical-design.md](05-technical-design.md)).
 
 **P2. Get a private link.** As a parent, I receive a private link for my child's tablet. *(MVP)*
 - The link works without a login and identifies one child.
@@ -98,12 +99,12 @@ Every story is tagged **MVP** (in the first version) or **Manual** (done by a pe
 | Q3 | Prediction answer vs. audio deletion | Transcribe, keep text, delete audio unless opted in |
 | Q4 | Interrupted session | Resume from last word; complete only when chapter and question are done |
 | Q5 | Missed-word display | Neutral; no "wrong" message |
-| Q6 | Note and link delivery | Parent's choice of text or email |
+| Q6 | Note and link delivery | Originally parent's choice of text or email; revised 2026-10-12 to email only, SMS deferred |
 | Q7 | "One page to read together" | A page of the story, chosen from shaky patterns |
 | Q8 | Device | iPad + Safari |
 
 ## Follow-ups for later documents
 
-- **Technical design:** SMS provider and phone consent; audio-opt-in revocation; transcription service for the prediction answer.
+- **Technical design:** audio-opt-in revocation; transcription service for the prediction answer. (SMS provider and phone consent are deferred with SMS.)
 - **UX flows:** how a resumed session looks; what the child sees when a second same-day start is blocked.
 - **Content:** the story needs excerpt-sized pages so the parent page can be picked for any shaky pattern.

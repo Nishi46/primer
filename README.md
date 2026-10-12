@@ -18,19 +18,19 @@ Read in this order:
 ## Planned stack
 
 - Front end: small framework with Vite, iPad Safari only
-- Speech scoring: general speech-to-text aligned to the chapter text
-- Hosting and data: backend-as-a-service
-- Delivery: email and SMS by script
+- Speech scoring: Deepgram streaming, aligned to the chapter text (Azure pronunciation assessment is the fallback)
+- Hosting and data: Supabase (free plan for the pilot)
+- Delivery: email by script (Resend); SMS deferred
 
-Vendors are not chosen yet. See the technical design.
+Vendors were chosen on 2026-10-12. See the technical design for the trade-offs and open checks.
 
 ## Prerequisites
 
 To be filled in when the build starts. Expected:
 
 - Node.js (version to be set)
-- An account on the chosen backend platform
-- API keys for the speech service, email provider and SMS provider
+- A Supabase project
+- API keys for Deepgram and Resend
 - A real iPad with Safari for testing the microphone
 
 ## Setup

@@ -37,9 +37,10 @@ The parent's signup. One per child in the MVP.
 | Field | Notes |
 | --- | --- |
 | id | |
-| contact_channel | text or email |
-| contact_value | phone number or email address |
-| consent_at | when the parent agreed to the privacy note |
+| contact_channel | email for now; kept as a field in case SMS returns |
+| contact_value | email address |
+| consent_at | when the parent's signed consent was recorded |
+| consent_version | which consent text and vendor list they agreed to |
 | keep_audio | true only if the parent opted in |
 
 ### Child

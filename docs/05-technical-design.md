@@ -21,12 +21,12 @@ flowchart LR
     S --> D[(Database)]
     S -->|transcribe prediction| V
     S --> N[Note sender]
-    N -->|text or email| P[Parent]
+    N -->|email| P[Parent]
     P -->|excerpt link| S
     O[Operator tool] --> D
 ```
 
-Data flow for one session: the page loads a chapter for the child's token, records the microphone, and sends audio to the backend. The backend asks the speech service to match the audio against the known chapter text and returns word outcomes, which the page uses to highlight words and run the hint ladder. Outcomes are saved as WordAttempt rows. Audio is deleted after scoring unless the family opted in.
+Data flow for one session: the page loads a chapter for the child's token, records the microphone, and streams audio to the backend. The backend streams it to the speech service, which returns word timings as the child reads; the backend matches them against the known chapter text and returns word outcomes, which the page uses to highlight words and run the hint ladder. Live highlighting and the ladder timers require **streaming** recognition, not recorded-file transcription. Outcomes are saved as WordAttempt rows. Audio is deleted after scoring unless the family opted in.
 
 ## Fixed by the MVP (no choice needed)
 
@@ -63,9 +63,11 @@ The expected text is known, so the job is matching timings to words. This decisi
 | B. Pronunciation-assessment service that takes reference text (such as Azure Speech pronunciation assessment) | Built for this: per-word scores against reference text | Scores are tuned for language learners, and quality on 5 to 7 year olds is unproven; cloud-vendor setup |
 | C. Open-source model (such as Whisper) run on your own server | Full control and word timestamps; no per-minute vendor cost | You host and tune it; slower; the same autocorrect problem as A |
 
-Recommendation: start with **A**, aligned to the chapter text, and measure agreement against the human listener (as the MVP plans). Run **B** in parallel on the first three families' recordings as a comparison, since it is cheap to test.
+Recommendation: start with **A**, aligned to the chapter text, and measure agreement against the human listener (as the MVP plans). Keep **B** as a fallback if agreement falls short.
 
-**Decision (TD2): A**, general speech-to-text aligned to the chapter text, with B trialed on the first three families' recordings.
+**Decision (TD2, revised 2026-10-12): A**, general speech-to-text aligned to the chapter text. **Vendor: Deepgram** streaming. Azure was dropped from the up-front plan: the human-listener check on the first three families already tests whether A is trustworthy, and a second speech vendor would add a third party to the consent form and legal review.
+
+**Fallback:** if agreement with the human listener is below the Brief's threshold (90% of words, no group clearly worse), integrate B (Azure Speech pronunciation assessment, which scores each word against reference text) and re-run the same comparison on the same recordings. Before doing so, add Azure to the consent form and legal review. What we know about B: its price is the same as standard speech-to-text per the [Microsoft docs](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-pronunciation-assessment), though third-party sources quoted different figures; audio over 30 seconds needs continuous mode, which does not flag omissions or insertions, so those come from comparing to the chapter text; child-voice accuracy is unverified. Deepgram list prices ([deepgram.com/pricing](https://deepgram.com/pricing)): Nova-3 $0.0043/min recorded and a regular $0.0077/min streaming, with $200 free credit. About 160 sessions of about 2 minutes is roughly 320 minutes, so speech cost for the pilot is small.
 
 ## Choice 3: Hosting and database
 
@@ -78,13 +80,16 @@ Recommendation: start with **A**, aligned to the chapter text, and measure agree
 Recommendation was **A** for ten families. Scalability was the deciding question, since A scales least and B grows past the pilot with no extra work.
 
 **Decision (TD3): B**, a backend-as-a-service. Consequences:
-- The platform's database, file storage and scheduled jobs replace the server. Platform choice (Supabase, Firebase or similar) is made at build time.
-- Children's data sits on a third-party platform, so choose a region deliberately, turn on row-level access rules, keep the storage bucket for opted-in audio private, and enable the platform's backups.
+- The platform's database, file storage and scheduled jobs replace the server.
+- **Vendor (2026-10-12): Supabase, free plan.** Checked against [supabase.com/pricing](https://supabase.com/pricing): 500 MB database, 1 GB file storage, 50,000 MAU, 5 GB egress. This is enough for ten families.
+- The free plan **pauses a project after a week of inactivity** and **includes no automatic backups**. Mitigations: keep the project active (a daily scheduled ping or the daily sessions themselves) and wake it before launch; run a nightly export of the database to a private location you control. Revisit Pro ($25/month, 7-day daily backups) if either risk bites, or before holding data from any family you cannot afford to lose.
+- Supabase Free and Pro do not include HIPAA or SOC 2. Children's voice data is not HIPAA data, but the COPPA section below still applies.
+- Children's data sits on a third-party platform, so choose a region deliberately, turn on row-level access rules and keep the storage bucket for opted-in audio private.
 - Temporary audio between recording and scoring goes in a private bucket with a short expiry, plus a scheduled job that deletes anything older than the scoring window.
 
 ## Choice 4: Note and link delivery
 
-Parents chose text or email in the PRD (Q6), so both channels are needed.
+The PRD (Q6) originally let parents choose text or email. On 2026-10-12 this was narrowed to email only for now.
 
 | Option | Pros | Cons |
 | --- | --- | --- |
@@ -94,9 +99,10 @@ Parents chose text or email in the PRD (Q6), so both channels are needed.
 
 Recommendation was **B**, to avoid SMS registration delays.
 
-**Decision (TD4): A**, email and SMS both sent by script. Consequences:
-- Start SMS sender registration immediately, since it can take days to weeks and could delay the pilot.
-- Signup must collect explicit consent for texts.
+**Decision (TD4, revised 2026-10-12): email only, through Resend, sent by script.** SMS is deferred. Supersedes the earlier choice of email and SMS both by script. Consequences:
+- **Vendor:** Resend. Its free tier reported by secondary sources (3,000 emails a month, 100 a day, one verified domain) covers ten families; confirm on resend.com/pricing.
+- The signup form and the PRD drop the text option. Parents without email cannot join the pilot.
+- No SMS registration, phone consent or SMS vendor are needed now. If SMS returns, Twilio sole-proprietor registration was the option researched ($4 brand, $15 campaign, $2/month; approval time unconfirmed and can take days to weeks).
 - Each send writes sent_at; link clicks write opened_at.
 - Keep manual sending as a fallback if registration is not ready for the first families.
 
@@ -120,7 +126,10 @@ Recommendation: **A**, and treat transcripts as approximate in the note ("what S
 - Connections use HTTPS only. Tokens are long and random. A missing or wrong token returns the same plain error page.
 - Audio sent to a speech vendor should use settings that do not retain or train on it, where the vendor offers that. Verify per vendor.
 - A parent consent screen at signup states what is kept and for how long. The PRD defers retention periods to this document: **proposal** is to delete scores, transcripts and contact details a set number of days after the pilot ends. **Decision (TD6): 90 days** after the pilot ends, then delete scores, transcripts and parent contact details. The PRD's audio opt-in can be revoked by the parent at any time, which deletes stored audio immediately.
-- COPPA and similar rules may apply to a pilot with children under 13. Confirm requirements before recruiting anyone beyond friends and family.
+- **COPPA applies, so plan for it.** The amended rule ([Federal Register, 2025-04-22](https://www.federalregister.gov/documents/2025/04/22/2025-05904/childrens-online-privacy-protection-rule)) covers children's voice recordings, and its compliance date was April 22, 2026. The FTC's voice-recording exception is for audio used solely as a replacement for written words and then destroyed; scoring a child's reading while also holding a name probably does not qualify, so assume verifiable parental consent is required.
+- The "email plus" consent method is for data not disclosed to third parties. Sending audio to a speech vendor is a disclosure, so a checkbox or email-plus is likely not enough.
+- **Decision (2026-10-12): stronger consent now, plus a legal check.** Signup uses a signed parental-consent step that names each vendor that touches the child's data (speech service, backend platform, email provider). The exact consent mechanism is chosen with the legal reviewer. No family is recruited until the review is done.
+- This is research notes, not legal advice.
 
 ## Operator tools
 
@@ -141,9 +150,10 @@ One deployment with HTTPS, environment variables for keys, and a daily database 
 | Risk | Mitigation |
 | --- | --- |
 | Safari microphone permission or audio format quirks | Test on a real iPad on day one |
-| Speech service autocorrects a child's mispronunciation | Measure against the human listener; trial the pronunciation-assessment option |
+| Speech service autocorrects a child's mispronunciation | Measure against the human listener; fall back to the pronunciation-assessment option if agreement is below threshold |
 | Latency makes the ladder timing feel off | Keep the 3-second timings tunable; test on a real connection |
-| SMS registration delays | Start registration first; send by hand as a fallback |
+| Supabase free project paused or data lost (no backups) | Keep the project active; nightly export; move to Pro if needed |
+| Consent mechanism not accepted by legal review | Recruit only after review; keep the pilot to families you know |
 | Cost per child per day is too high | CostLog per call from session one |
 | Child data exposure | Minimal data, 90-day retention, private storage, row-level access rules, conservative vendor settings |
 
@@ -152,14 +162,16 @@ One deployment with HTTPS, environment variables for keys, and a daily database 
 | # | Decision |
 | --- | --- |
 | TD1 | Front end: small framework with Vite |
-| TD2 | Speech scoring: general speech-to-text aligned to chapter text; pronunciation-assessment trial on first 3 families |
-| TD3 | Hosting and database: backend-as-a-service |
-| TD4 | Delivery: email and SMS both by script |
+| TD2 | Speech scoring: Deepgram streaming, aligned to chapter text; Azure pronunciation assessment is a fallback only (revised 2026-10-12) |
+| TD3 | Hosting and database: Supabase, free plan (pause and no-backup risks accepted, mitigated) |
+| TD4 | Delivery: email only, Resend; SMS deferred (revised 2026-10-12) |
 | TD5 | Prediction transcription: same service as scoring |
 | TD6 | Retention: 90 days after the pilot ends |
 
 ## Follow-ups
 
 - Add the excerpt page and its "We read it together" button as a screen in [03-ux-flows.md](03-ux-flows.md).
-- Pick the exact backend platform, speech vendor, email provider and SMS provider when the build starts, and verify prices and children's-data terms for each.
-- Confirm COPPA and consent requirements before recruiting beyond friends and family.
+- Before signing up for Deepgram: confirm its data-retention and training opt-out settings and whether it will sign the written assurances COPPA expects of a service provider. Its pricing page did not say.
+- Only if the fallback triggers: confirm Azure pronunciation assessment pricing and child-voice accuracy, and add Azure to the consent form and legal review first.
+- Do the legal review of the consent mechanism and privacy notice before recruiting any family.
+- Add a short privacy notice page and the consent screen to [03-ux-flows.md](03-ux-flows.md).

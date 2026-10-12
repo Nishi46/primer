@@ -10,10 +10,10 @@ Screens are ASCII sketches for an iPad in landscape. They show layout and states
 flowchart TD
     A[Signup page] --> B[Enter child first name]
     B --> C[Enter two life details]
-    C --> D[Choose text or email, enter contact]
+    C --> D[Enter email address]
     D --> E[Choose: keep audio? default no]
-    E --> F[Consent screen]
-    F -->|agrees| G[Link sent to chosen channel]
+    E --> F[Signed parental consent step]
+    F -->|consents| G[Link sent by email]
     F -->|declines| H[Stops, nothing stored]
     G --> I[Parent opens link on tablet]
 ```
@@ -47,7 +47,7 @@ flowchart LR
     A[Week's scores] --> B[Template fills solid and shaky patterns]
     B --> C[Model writes one-line summary]
     C --> D[Operator reviews]
-    D --> E[Sent by text or email]
+    D --> E[Sent by email]
     E --> F[Parent opens link to note]
 ```
 
@@ -177,14 +177,14 @@ Resumes at the last word reached.
 |  A pet's name         [_____________]            |
 |  Something they fear  [_____________]            |
 |                                                  |
-|  Send me the link and weekly note by:            |
-|   ( ) Text    ( ) Email                          |
-|  Phone or email       [_____________]            |
+|  Email for the link and weekly note              |
+|  Email address        [_____________]            |
 |                                                  |
 |  [ ] Keep my child's recordings                  |
 |      (otherwise they are deleted after scoring)  |
 |                                                  |
-|  [ ] I agree to the privacy note   [ Sign up ]   |
+|  Parental consent (signed, names each vendor)    |
+|                                  [ Sign up ]     |
 +--------------------------------------------------+
 ```
 
@@ -209,7 +209,7 @@ What Sam thinks happens next:
  - ...
 ```
 
-Plain text, readable in a text message or email. The note stays short; the page to read together opens from a link as a web page the parent can read on the tablet or print.
+Plain text, readable as an email. The note stays short; the page to read together opens from a link as a web page the parent can read on the tablet or print.
 
 ### S11. Excerpt page (parent, opened from the note)
 
