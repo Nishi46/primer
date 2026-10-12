@@ -214,7 +214,8 @@ Draft wording for the legal reviewer. Plain language, one screen, no scrolling b
 |                                                  |
 |  How long we keep the rest                       |
 |   Until 90 days after the study ends, then       |
-|   deleted.                                       |
+|   deleted. Backups clear within 14 days of a     |
+|   deletion.                                      |
 |                                                  |
 |  Your choices                                    |
 |   See, change or delete everything, or stop      |

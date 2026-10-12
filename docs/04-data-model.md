@@ -47,6 +47,15 @@ The parent's signup. One per child in the MVP.
 | manage_token | random token for the manage-data page, separate from the child's link_token |
 | keep_audio | true only if the parent opted in |
 
+### DeletionLog
+Written when a parent deletes everything. Holds no personal data.
+
+| Field | Notes |
+| --- | --- |
+| id | random, unrelated to the Family id |
+| deleted_at | |
+| consent_version | which consent text the family had agreed to |
+
 ### Child
 | Field | Notes |
 | --- | --- |

@@ -131,6 +131,78 @@ Recommendation: **A**, and treat transcripts as approximate in the note ("what S
 - **Decision (2026-10-12): stronger consent now, plus a legal check.** Signup uses a signed parental-consent step that names each vendor that touches the child's data (speech service, backend platform, email provider). The exact consent mechanism is chosen with the legal reviewer. No family is recruited until the review is done.
 - This is research notes, not legal advice.
 
+## Consent, confirmation and data deletion
+
+Implements screens S9 to S9e in [03-ux-flows.md](03-ux-flows.md). Decisions TD7 to TD10 were settled on 2026-10-12 (see Decisions).
+
+### Signup sequence
+
+```mermaid
+sequenceDiagram
+    participant P as Parent
+    participant W as Web app
+    participant DB as Supabase
+    participant E as Resend
+    P->>W: Name and email (S9)
+    P->>W: Reads notice (S9a), consents (S9b)
+    W->>DB: Create Family (unconfirmed), store consent record
+    W->>E: Confirmation email with single-use link
+    P->>W: Clicks link
+    W->>DB: Set consent_confirmed_at
+    P->>W: Child details (S9d)
+    W->>DB: Create Child, link_token, manage_token
+    W->>E: Email child link and manage link
+```
+
+- No Child row exists before consent_confirmed_at is set. The child's link cannot work for an unconfirmed family.
+- **Confirmation link:** random single-use token that expires after 7 days (TD10). An unconfirmed Family and its parent details are deleted when the link expires.
+- **Consent record:** written once and never edited. It holds consent_version, the exact notice and vendor-list text shown, typed_signature, keep_audio choice and timestamp. Store the notice text itself, not only a version number, so we can show what each parent saw.
+- **Tokens:** link_token, manage_token, excerpt tokens and the confirmation token are long random values. Store only a hash of each in the database where the app does not need to display them again.
+
+### Manage page actions (S9e)
+
+| Action | What happens |
+| --- | --- |
+| Stop keeping recordings | Delete all stored audio objects for the child immediately, set keep_audio to false. Scores and transcripts stay. |
+| Download everything | Generate a file of the family's data (parent details, child details, sessions, word attempts, transcripts, notes) and offer it on the page. Format: one JSON file (TD10). |
+| Delete everything | Hard-delete the Family, Child, Session, WordAttempt, Prediction, WeeklyNote, ReadingCheck and CostLog rows, and all audio. Then email a deletion confirmation and delete the email address. |
+
+Delete-everything asks "Are you sure?" and takes effect immediately, with no grace period (TD9).
+
+### What deletion must reach
+
+| Location | How |
+| --- | --- |
+| Supabase tables | Cascading delete from Family. |
+| Supabase storage (opted-in audio and any temporary audio) | Delete objects by path prefix for the child. |
+| Nightly database export | Rolling exports expire on a schedule, so a deletion leaves backups until they roll off. Keep 14 days of exports and say so in the privacy notice (TD8). |
+| Deepgram | Send audio with settings that do not retain it, if available, and confirm in writing. If Deepgram does retain anything, record how to request its deletion. Unverified; see follow-ups. |
+| Resend | Message logs may hold the parent's email. Confirm the log retention and whether it can be deleted early. Unverified. |
+| Operator's own copies | Any recordings downloaded for the human check (first three families) are deleted with the family. Keep them only in one agreed place. |
+
+### Deletion log
+
+After a Delete-everything (TD7), keep one minimal row with a random ID, the deletion date and the consent_version. No names, emails or recordings. This shows a deletion was done without keeping personal data. The legal reviewer should say whether the consent record itself must also be kept.
+
+### Scheduled jobs
+
+| Job | Schedule | Action |
+| --- | --- | --- |
+| Temporary audio purge | Hourly | Delete audio older than the scoring window |
+| Unconfirmed signup purge | Daily | Delete Families unconfirmed after 7 days |
+| Backup expiry | Daily | Delete exports older than the retention window |
+| End-of-study purge | Once, from the pilot end date set by the operator, plus 90 days | Delete scores, transcripts and parent contact details (TD6) |
+| Keep-alive | Daily | Touch the Supabase project so the free plan does not pause it |
+
+Whether scheduled jobs run on Supabase free needs checking. If not, run them from a small external scheduler.
+
+### Security basics
+
+- Rate-limit the confirmation, link and manage endpoints, and return the same plain error for any bad token.
+- Manage-page actions need the manage_token only; they never expose another family's data.
+- Delete actions and downloads are logged without personal data.
+- Emails link to the manage page without including the child's name in the subject line.
+
 ## Operator tools
 
 - A minimal page or script to list sessions, play audio for the first three families, mark each word correct, wrong or skipped, and compute agreement.
@@ -167,6 +239,10 @@ One deployment with HTTPS, environment variables for keys, and a daily database 
 | TD4 | Delivery: email only, Resend; SMS deferred (revised 2026-10-12) |
 | TD5 | Prediction transcription: same service as scoring |
 | TD6 | Retention: 90 days after the pilot ends |
+| TD7 | After Delete-everything, keep a minimal log (random ID, date, consent version); consent record kept only if the legal reviewer requires it |
+| TD8 | Nightly database exports kept 14 days |
+| TD9 | Delete-everything is immediate after "Are you sure?" |
+| TD10 | Confirmation link expires in 7 days; download is one JSON file |
 
 ## Follow-ups
 
@@ -174,4 +250,6 @@ One deployment with HTTPS, environment variables for keys, and a daily database 
 - Before signing up for Deepgram: confirm its data-retention and training opt-out settings and whether it will sign the written assurances COPPA expects of a service provider. Its pricing page did not say.
 - Only if the fallback triggers: confirm Azure pronunciation assessment pricing and child-voice accuracy, and add Azure to the consent form and legal review first.
 - Do the legal review of the consent mechanism and privacy notice before recruiting any family.
-- Add a short privacy notice page and the consent screen to [03-ux-flows.md](03-ux-flows.md).
+- Check that Supabase free supports scheduled jobs; otherwise use an external scheduler.
+- Confirm Deepgram and Resend retention and deletion options in writing.
+- Add the 14-day backup note to the privacy notice (done in S9a) and have the legal reviewer confirm it.
