@@ -45,6 +45,7 @@ Every story is tagged **MVP** (in the first version) or **Manual** (done by a pe
 - No account, password or payment.
 - The link and the weekly note are sent by email (revised 2026-10-12; SMS deferred). The parent gives an email address at signup.
 - Signup includes a signed parental-consent step that names the vendors handling the child's data (see [05-technical-design.md](05-technical-design.md)).
+- Order: parent name and email, privacy notice, consent, email confirmation, then child details. Nothing about the child is collected before consent is confirmed ([03-ux-flows.md](03-ux-flows.md), S9 to S9d).
 
 **P2. Get a private link.** As a parent, I receive a private link for my child's tablet. *(MVP)*
 - The link works without a login and identifies one child.
@@ -60,7 +61,7 @@ Every story is tagged **MVP** (in the first version) or **Manual** (done by a pe
 
 **P5. Control audio.** As a parent, I can opt in to keeping my child's recordings. *(MVP)*
 - Default is audio deleted after scoring.
-- The choice is made at signup. Revocation handling is a technical-design item.
+- The choice is a separate unchecked box on the consent screen. The parent can stop keeping recordings, download their data or delete everything at any time from a self-service page ([03-ux-flows.md](03-ux-flows.md), S9e).
 
 **P6. Give feedback at the end.** As a parent, after week 4 I report any distress or pushing for more screen time and whether we would keep going. *(Manual)*
 

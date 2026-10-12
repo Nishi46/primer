@@ -41,6 +41,10 @@ The parent's signup. One per child in the MVP.
 | contact_value | email address |
 | consent_at | when the parent's signed consent was recorded |
 | consent_version | which consent text and vendor list they agreed to |
+| parent_name | parent's name from signup step 1 |
+| typed_signature | full name typed on the consent screen |
+| consent_confirmed_at | set when the parent clicks the confirmation email link; no Child row exists before this |
+| manage_token | random token for the manage-data page, separate from the child's link_token |
 | keep_audio | true only if the parent opted in |
 
 ### Child

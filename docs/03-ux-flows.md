@@ -2,19 +2,21 @@
 
 2026-10-09 · Nishi · Status: draft, decisions resolved · Builds on [02-prd.md](02-prd.md)
 
-Screens are ASCII sketches for an iPad in landscape. They show layout and states, not final visuals. Design decisions UX1 to UX4 were settled on 2026-10-09 and are listed at the end.
+Screens are ASCII sketches for an iPad in landscape. They show layout and states, not final visuals. Design decisions UX1 to UX4 were settled on 2026-10-09 and UX5 to UX8 (consent and data controls) later; all are listed at the end.
 
-## Flow 1: Parent signup
+## Flow 1: Parent signup and consent
+
+Nothing about the child is collected until the parent's consent is recorded and confirmed. Only the parent's own name and email come first.
 
 ```mermaid
 flowchart TD
-    A[Signup page] --> B[Enter child first name]
-    B --> C[Enter two life details]
-    C --> D[Enter email address]
-    D --> E[Choose: keep audio? default no]
-    E --> F[Signed parental consent step]
-    F -->|consents| G[Link sent by email]
-    F -->|declines| H[Stops, nothing stored]
+    A[Start page] --> B[Parent name and email]
+    B --> C[Privacy notice]
+    C --> D[Consent screen: signed, names each vendor]
+    D -->|declines| H[Stops, parent details deleted]
+    D -->|consents| E[Confirmation email to parent]
+    E -->|parent clicks confirm| F[Child details: first name, pet, fear]
+    F --> G[Child link sent by email]
     G --> I[Parent opens link on tablet]
 ```
 
@@ -167,28 +169,143 @@ No buttons, scores, streaks or rewards. The app does nothing further. Reloading 
 
 Resumes at the last word reached.
 
-### S9. Parent signup (one page, parent-facing)
+### S9. Signup step 1: parent details (parent-facing)
 
 ```
 +--------------------------------------------------+
 |  Set up Primer for your child                    |
 |                                                  |
+|  This is a four-week reading study with          |
+|  ten families.                                   |
+|                                                  |
+|  Your name            [_____________]            |
+|  Your email           [_____________]            |
+|                                                  |
+|  We don't ask about your child until you've      |
+|  read and agreed to how we handle their data.    |
+|                                                  |
+|                         [ Continue ]             |
++--------------------------------------------------+
+```
+
+### S9a. Privacy notice
+
+Draft wording for the legal reviewer. Plain language, one screen, no scrolling box.
+
+```
++--------------------------------------------------+
+|  How we handle your child's information          |
+|                                                  |
+|  What we collect                                 |
+|   Your child's first name, a pet's name and      |
+|   something they fear (used in the story),       |
+|   recordings of them reading and answering,      |
+|   the words they read right or wrong, and        |
+|   your email.                                    |
+|                                                  |
+|  Who handles it                                  |
+|   Deepgram   turns the recordings into words     |
+|   Supabase   stores the records                  |
+|   Resend     sends you emails                    |
+|                                                  |
+|  What happens to recordings                      |
+|   Deleted right after scoring, unless you        |
+|   choose to let us keep them.                    |
+|                                                  |
+|  How long we keep the rest                       |
+|   Until 90 days after the study ends, then       |
+|   deleted.                                       |
+|                                                  |
+|  Your choices                                    |
+|   See, change or delete everything, or stop      |
+|   keeping recordings, at any time.               |
+|                                                  |
+|  Questions: <contact email>                      |
+|                                                  |
+|                         [ Continue ]             |
++--------------------------------------------------+
+```
+
+We never use the information for advertising, and we do not share it with anyone beyond the three services above. (Statement to confirm with the legal reviewer.)
+
+### S9b. Consent screen
+
+```
++--------------------------------------------------+
+|  Your consent                                    |
+|                                                  |
+|  I am the parent or legal guardian of the child  |
+|  who will use Primer.                            |
+|                                                  |
+|  [ ] I have read the privacy notice and agree    |
+|      to Primer collecting my child's name,       |
+|      story details, voice and reading scores,    |
+|      and sharing them with Deepgram, Supabase   |
+|      and Resend as described.                   |
+|                                                  |
+|  Optional:                                       |
+|  [ ] Keep recordings of my child's reading       |
+|      (otherwise deleted right after scoring)     |
+|                                                  |
+|  Type your full name to sign                     |
+|  [______________________]   Date: <today>     |
+|                                                  |
+|     [ I don't agree ]          [ I agree ]       |
++--------------------------------------------------+
+```
+
+Nothing is stored about the child at this point. "I agree" records the consent version, the vendor list, the typed name, and a timestamp. The audio box is unchecked by default and is separate from the required box.
+
+### S9c. Check your email
+
+```
++--------------------------------------------------+
+|  Check your email                                |
+|                                                  |
+|  We sent a message to <email>.                   |
+|  Click the link in it to confirm it was you.     |
+|  It includes a copy of what you agreed to.       |
+|                                                  |
+|  Didn't get it?  [ Send again ]                  |
++--------------------------------------------------+
+```
+
+### S9d. Signup step 2: child details (after the confirmation link)
+
+```
++--------------------------------------------------+
+|  Tell us about your child                        |
+|                                                  |
 |  Child's first name   [_____________]            |
 |  A pet's name         [_____________]            |
 |  Something they fear  [_____________]            |
 |                                                  |
-|  Email for the link and weekly note              |
-|  Email address        [_____________]            |
+|  These appear in the story. You can't change     |
+|  them later. (To change, email <contact email>.) |
 |                                                  |
-|  [ ] Keep my child's recordings                  |
-|      (otherwise they are deleted after scoring)  |
-|                                                  |
-|  Parental consent (signed, names each vendor)    |
-|                                  [ Sign up ]     |
+|                         [ Finish ]               |
 +--------------------------------------------------+
 ```
 
-The two life details are examples from the MVP. The prompts are fixed: a pet's name and something the child fears. Each has a known slot in the chapters.
+The prompts are fixed: a pet's name and something the child fears. Each has a known slot in the chapters. Finishing emails the child's private link.
+
+### S9e. Manage my child's data (parent, link in every email)
+
+```
++--------------------------------------------------+
+|  Manage <child>'s data                           |
+|                                                  |
+|  Recordings:  [ Not kept ]  or  [ Kept ]         |
+|     [ Stop keeping recordings and delete them ]  |
+|                                                  |
+|  [ Download everything we have ]                 |
+|                                                  |
+|  [ Delete everything and leave the study ]       |
+|     (asks "Are you sure?" first)                 |
++--------------------------------------------------+
+```
+
+Uses its own private token, separate from the child's link. Deleting everything removes the child's records and the parent's contact details. Scores already used in the study results can't be pulled back out once the results are published; the notice should say so if the legal reviewer asks for it.
 
 ### S10. Weekly parent note
 
@@ -245,8 +362,16 @@ Opened by the note's excerpt link, which has its own token. Opening it sets `ope
 | UX2 | Child taps to start and taps to stop the prediction answer |
 | UX3 | Fixed prompts: pet's name and a fear |
 | UX4 | Short inline note plus a link to the page excerpt |
+| UX5 | Parent first; child details only after consent is confirmed by email (2026-10-12) |
+| UX6 | Consent is a typed full name, a required checkbox and an email confirmation; legal review may strengthen it |
+| UX7 | Keeping recordings is a separate unchecked box on the consent screen |
+| UX8 | Parents manage and delete data on a self-service page with its own token (S9e) |
 
 ## Follow-ups for later documents
+
+- **Legal review:** the privacy notice (S9a) and consent wording (S9b) are drafts for the reviewer. Items flagged for them: the "no advertising, no sharing beyond the three services" statement, and whether published study results can keep scores after a parent deletes their data.
+- **Data model:** Family needs parent_name, typed_signature, consent_confirmed_at and a manage_token. Child rows are created only after confirmation.
+- **Technical design:** confirmation email, manage page and deletion job (including vendor-side deletion) need a design.
 
 - **Data model:** done. Excerpt entity and `opened_at` / `page_read_at` are in [04-data-model.md](04-data-model.md); screen S11 above covers the excerpt page.
 - **Technical design:** the excerpt link needs the same private-token protection as the child's link.
